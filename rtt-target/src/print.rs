@@ -77,6 +77,17 @@ pub fn set_print_channel(channel: UpChannel) {
     }
 }
 
+#[cfg(feature = "cortex-a")]
+pub fn set_print_channel(channel: UpChannel) {
+    // TODO: add critical section when we have ARMv7a impl
+    unsafe {
+        set_print_channel_cs(
+            channel,
+            &((|arg, f| f(arg)) as CriticalSectionFunc),
+        );
+    }
+}
+
 /// Public due to access from macro.
 #[doc(hidden)]
 pub mod print_impl {
@@ -180,7 +191,7 @@ macro_rules! rprintln {
 ///
 /// This macro is defined only if the [`set_print_channel`] function is available, i.e. if you have
 /// enabled a platform support feature.
-#[cfg(any(feature = "cortex-m", feature = "riscv"))]
+#[cfg(any(feature = "cortex-m", feature = "riscv", feature = "cortex-a"))]
 #[macro_export]
 macro_rules! rtt_init_print {
     ($mode:ident, $size:literal) => {
@@ -208,7 +219,7 @@ macro_rules! rtt_init_print {
 
 /// This version of the macro only is defined if no platform support feature is enabled and outputs
 /// a more friendly error message.
-#[cfg(not(any(feature = "cortex-m", feature = "riscv")))]
+#[cfg(not(any(feature = "cortex-m", feature = "riscv", feature = "cortex-a")))]
 #[macro_export]
 macro_rules! rtt_init_print {
     ($($_:tt)*) => {
